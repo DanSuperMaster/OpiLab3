@@ -1,0 +1,41 @@
+.input{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    border-radius: 5px;
+}
+
+.input-x{
+    margin-top: 2%;
+    margin-bottom: 2%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#select-x {
+    margin-top: 5px;
+    width: 100px;
+    padding: 10px;
+    text-align: center;
+    font-size: 16px;
+    cursor: url("#{resource['media/wot_link.cur']}"), pointer;
+}
+
+.input-y{
+    margin-top: 2%;
+    margin-bottom: 2%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.input-r{
+    margin-top: 2%;
+    margin-bottom: 2%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

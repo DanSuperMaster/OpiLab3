@@ -1,0 +1,62 @@
+body{
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.mainCl{
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.results-wrapper{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.image-container{
+    background: rgba(0,0,0,0.6);
+    margin-left: 5%;
+    cursor: url("#{resource['media/cursor.cur']}"), auto;
+    border-radius: 5px;
+}
+
+.submit-button {
+    background: rgba(0,0,0,0.2) !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    margin-botton: 10px !important;
+    cursor: url("#{resource['media/wot_link.cur']}"), pointer !important;
+}
+
+.submit-button:hover{
+    background-color: rgba(0,0,0,0.4) !important;
+}
+
+.submit-button:active{
+    background-color: rgba(0,0,0,0.01) !important;
+}
+
+.svg{
+    position: relative;
+    margin: 10px 10px 10px 10px;
+    height: 312px;
+    width: 305px;
+    border-radius: 5px;
+}
+
+.svg * {
+    pointer-events: none;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

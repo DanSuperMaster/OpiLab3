@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+
+<h:head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Lab 3 - Main Page</title>
+
+    <h:outputStylesheet library="styles" name="header.css"/>
+    <h:outputStylesheet library="styles" name="input.css"/>
+    <h:outputStylesheet library="styles" name="output.css"/>
+    <h:outputStylesheet library="styles" name="style.css"/>
+
+    <h:outputScript library="scripts" name="error.js" />
+    <h:outputScript library="scripts" name="validator.js" />
+    <h:outputScript library="scripts" name="draw.js" />
+</h:head>
+<h:body>
+    <div class="screen">
+
+        <video id="bgVideo" autoplay="autoplay" loop="loop" muted="muted" playsinline="playsinline">
+            <source src="resources/media/game.mp4" type="video/mp4"/>
+        </video>
+
+        <audio id="bgAudio" loop="loop">
+            <source src="resources/media/game.mp4" type="audio/mp4"/>
+        </audio>
+
+        <audio id="good1">
+            <source src="resources/media/good1.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="good2">
+            <source src="resources/media/good2.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="bad1">
+            <source src="resources/media/bad1.mp3" type="audio/mp3"/>
+        </audio>
+
+        <audio id="bad2">
+            <source src="resources/media/bad2.mp3" type="audio/mp3"/>
+        </audio>
+
+        <div class="mainCl">
+            <h:form id="input-form" styleClass="input" prependId="false">
+                <div class="input-x">
+                    <div class="input-text"> Выберите X: </div>
+                    <h:selectOneRadio id="select-x" value="#{inputBean.x}">
+                        <f:selectItem itemLabel="-4" itemValue="-4"/>
+                        <f:selectItem itemLabel="-3" itemValue="-3"/>
+                        <f:selectItem itemLabel="-2" itemValue="-2"/>
+                        <f:selectItem itemLabel="-1" itemValue="-1"/>
+                        <f:selectItem itemLabel="0" itemValue="0"/>
+                        <f:selectItem itemLabel="1" itemValue="1"/>
+                        <f:selectItem itemLabel="2" itemValue="2"/>
+                        <f:selectItem itemLabel="3" itemValue="3"/>
+                        <f:selectItem itemLabel="4" itemValue="4"/>
+                        <p:ajax event="change"
+                                oncomplete="syncHiddenWithRadio()" />
+                    </h:selectOneRadio>
+                </div>
+                <div class="input-y">
+                    <div class="input-text"> Выберите Y: </div>
+                    <h:inputText id="yInput" value="#{inputBean.y}" type="text" styleClass="number-input" placeholder="Введите число...">
+                        <f:convertNumber maxFractionDigits="10" minFractionDigits="0" />
+                        <f:validateDoubleRange min="-3" max="5" />
+                        <p:ajax event="keyup" oncomplete="syncHiddenWithText()" />
+                    </h:inputText>
+                    <h:message for="yInput" style="color:red;" />
+                </div>
+                <div class="input-r">
+                    <div class="input-text"> Выберите R: </div>
+                    <h:panelGrid columns="5">
+                        <p:selectBooleanCheckbox id="r1" value="#{inputBean.r['1']}" pt:data-r="1" onchange="handleCheckboxChange(this)" >
+                            <p:ajax event="change" process="@this" />
+                        </p:selectBooleanCheckbox>
+                        <h:outputLabel for="r1" value="1" />
+
+                        <p:selectBooleanCheckbox id="r2" value="#{inputBean.r['2']}" pt:data-r="2" onchange="handleCheckboxChange(this)" >
+                            <p:ajax event="change" process="@this" />
+                        </p:selectBooleanCheckbox>
+                        <h:outputLabel for="r2" value="2" />
+
+                        <p:selectBooleanCheckbox id="r3" value="#{inputBean.r['3']}" pt:data-r="3" onchange="handleCheckboxChange(this)" >
+                            <p:ajax event="change" process="@this" />
+                        </p:selectBooleanCheckbox>
+                        <h:outputLabel for="r3" value="3" />
+
+                        <p:selectBooleanCheckbox id="r4" value="#{inputBean.r['4']}" pt:data-r="4" onchange="handleCheckboxChange(this)" >
+                            <p:ajax event="change" process="@this" />
+                        </p:selectBooleanCheckbox>
+                        <h:outputLabel for="r4" value="4" />
+
+                        <p:selectBooleanCheckbox id="r5" value="#{inputBean.r['5']}" pt:data-r="5" onchange="handleCheckboxChange(this)" >
+                            <p:ajax event="change" process="@this" />
+                        </p:selectBooleanCheckbox>
+                        <h:outputLabel for="r5" value="5" />
+                    </h:panelGrid>
+                </div>
+
+                <h:inputHidden id="hiddenX" value="#{inputBean.x}"/>
+                <h:inputHidden id="hiddenY" value="#{inputBean.y}"/>
+                <h:inputHidden id="hiddenR" value="#{inputBean.hiddenR}" />
+
+                <p:remoteCommand name="resetHiddenRCommand"
+                                 process="@this"
+                                 update=":responsesForm"
+                                 actionListener="#{inputBean.resetHiddenR}" />
+
+                <p:remoteCommand name="updateRCommand"
+                                 action="#{inputBean.setCurrentMaxR}"
+                                 process="@this"
+                                 update="@none"
+                                 oncomplete="getPointsCommand()"
+                />
+
+                <p:remoteCommand name="getPointsCommand"
+                                 action="#{inputBean.updateFilteredPoints}"
+                                 process="@this"
+                                 update="@none"
+                                 oncomplete="handleRemoteCommandComplete(args)"
+                />
+
+                <p:commandButton id="submitBtn" value="Проверить" action="#{inputBean.check}" styleClass="submit-button"
+                                 update="input-form @form :responsesForm"
+                                 process="@form"
+                                 onclick="if (!validate()) return false;"
+                                 oncomplete="playShotSound(args.wasProbitie); updateRCommand([{ name: 'maxR', value: getMaxR() }]); clearHiddenInputs()"
+                />
+            </h:form>
+
+            <div class="image-container">
+                <svg class="svg">
+                    <line x1="0" y1="150" x2="300" y2="150" stroke="#000720"/>
+                    <line x1="150" y1="0" x2="150" y2="310" stroke="#000720"/>
+
+                    <line x1="300" y1="148" x2="300" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="295" y="140">5</text>
+                    <line x1="270" y1="148" x2="270" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="265" y="140">4</text>
+                    <line x1="240" y1="148" x2="240" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="235" y="140">3</text>
+                    <line x1="210" y1="148" x2="210" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="205" y="140">2</text>
+                    <line x1="180" y1="148" x2="180" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="175" y="140">1</text>
+
+                    <line x1="150" y1="148" x2="150" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="140" y="165">0</text>
+
+                    <line x1="120" y1="148" x2="120" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="115" y="140">-1</text>
+                    <line x1="90" y1="148" x2="90" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="85" y="140">-2</text>
+                    <line x1="60" y1="148" x2="60" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="55" y="140">-3</text>
+                    <line x1="30" y1="148" x2="30" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="25" y="140">-4</text>
+                    <line x1="0" y1="148" x2="0" y2="152" stroke="#000720"/>
+                    <text class="forSvg" x="0" y="140">-5</text>
+
+                    <line x1="148" y1="0" x2="152" y2="0" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="15">5</text>
+                    <line x1="148" y1="30" x2="152" y2="30" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="40">4</text>
+                    <line x1="148" y1="60" x2="152" y2="60" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="70">3</text>
+                    <line x1="148" y1="90" x2="152" y2="90" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="100">2</text>
+                    <line x1="148" y1="120" x2="152" y2="120" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="130">1</text>
+
+                    <line x1="148" y1="180" x2="152" y2="180" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="190">-1</text>
+                    <line x1="148" y1="210" x2="152" y2="210" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="220">-2</text>
+                    <line x1="148" y1="240" x2="152" y2="240" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="250">-3</text>
+                    <line x1="148" y1="270" x2="152" y2="270" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="280">-4</text>
+                    <line x1="148" y1="300" x2="152" y2="300" stroke="#000720"/>
+                    <text class="forSvg" x="156" y="310">-5</text>
+
+                    <polygon points="300,150 295,155 295,145" fill="#000720" stroke="#000720"/>
+                    <polygon points="150,0 145,5 155,5" fill="#000720" stroke="#000720"/>
+                </svg>
+            </div>
+        </div>
+        <h:form id="responsesForm" prependId="false">
+            <p:panel id="responsesPanel" styleClass="responses-container" header="Результаты">
+                <p:dataTable styleClass="transparent-table" id="responsesId" value="#{inputBean.reversedPoints}" var="point"
+                             responsiveLayout="scroll" scrollable="true"
+                             scrollHeight="300" style="background:transparent !important; border:none !important;">
+                    <p:column headerText="x">
+                        <h:outputText value="#{point.x}">
+                            <f:convertNumber maxFractionDigits="10" minFractionDigits="0" />
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="y">
+                        <h:outputText value="#{point.y}">
+                            <f:convertNumber maxFractionDigits="10" minFractionDigits="0" />
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="r">
+                        <h:outputText value="#{point.r}">
+                            <f:convertNumber maxFractionDigits="10" minFractionDigits="0" />
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="result">
+                        #{point.inArea}
+                    </p:column>
+                </p:dataTable>
+            </p:panel>
+        </h:form>
+        <h:link styleClass="header2" value="Перейти на стартовую страницу" outcome="index"/>
+        <button id="unmuteButton">Включить звук</button>
+    </div>
+</h:body>
+</html>

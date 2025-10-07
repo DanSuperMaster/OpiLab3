@@ -1,0 +1,7 @@
+CREATE TABLE points (
+    id SERIAL PRIMARY KEY,
+    x NUMERIC(30, 10) NOT NULL,
+    y NUMERIC(30, 10) NOT NULL,
+    r NUMERIC(30, 10) NOT NULL,
+    in_area BOOLEAN NOT NULL
+);

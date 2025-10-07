@@ -1,0 +1,108 @@
+body{
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    cursor: url("#{resource['media/wot_arrow.cur']}"), auto;
+}
+
+.screen video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+
+.screen > *:not(video) {
+    position: relative;
+    z-index: 1;
+    color: white;
+}
+
+#unmuteButton {
+    position: absolute;
+    z-index: 2;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    font-size: 16px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: url("#{resource['media/wot_link.cur']}"), pointer;
+}
+
+.screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.app-header{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.header1{
+    font-size: larger;
+    text-align: center;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    padding: 10px;
+}
+
+.header2{
+    padding: 10px 10px;
+    font-size: large;
+    margin-bottom: 1%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: url("#{resource['media/wot_link.cur']}"), pointer;
+    text-decoration: none;
+}
+
+.v_boi {
+    cursor: url("#{resource['media/wot_link.cur']}"), pointer;
+    z-index: 2;
+    border-radius: 5px;
+}
+
+.v_boi-img {
+    width: 200px;
+    height: auto;
+    transition: filter 0.3s ease, transform 0.3s ease;
+    border-radius: 5px;
+}
+
+.v_boi-img:hover {
+    filter: brightness(1.2);
+    transform: scale(1.05);
+}
+
+.header2:hover{
+    background: rgba(0,0,0,0.8);
+}
+
+.header2:active{
+    background: rgba(0,0,0,0.4);
+}
+
+a[href^="http"]::selection {
+    background-color: #add4ff;
+}
+
+::selection {
+  background-color: #e3e3e3;
+}

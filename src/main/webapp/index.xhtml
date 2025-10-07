@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html">
+<h:head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Lab 3 - Home</title>
+
+    <h:outputStylesheet library="styles" name="header.css"/>
+    <h:outputScript target="body" library="scripts" name="clock.js" />
+
+</h:head>
+<h:body>
+    <div class="screen">
+        <header class="app-header">
+            <div class="header1"> Веб-программирование, Лабораторная работа №3, вариант 311690 </div>
+            <h:outputLink value="https://github.com/georgeboiko" styleClass="header2" target="_blank">
+                Бойко Георгий Александрович, P3216
+            </h:outputLink>
+        </header>
+
+        <canvas id="clock" width="200" height="200"/>
+
+        <video id="bgVideo" autoplay="autoplay" loop="loop" muted="muted" playsinline="playsinline">
+            <source src="resources/media/preview.mp4" type="video/mp4"/>
+        </video>
+
+        <audio id="bgAudio" loop="loop">
+            <source src="resources/media/preview.mp4" type="audio/mp4"/>
+        </audio>
+
+        <audio id="vBoiAudio">
+            <source src="resources/media/v_boi.wav" type="audio/wav"/>
+        </audio>
+
+        <button id="unmuteButton">Включить звук</button>
+        <h:link outcome="main" styleClass="v_boi" id="vBoiLink">
+            <h:graphicImage library="media" name="v_boi.png" alt="Перейти" styleClass="v_boi-img"/>
+        </h:link>
+    </div>
+</h:body>
+</html>

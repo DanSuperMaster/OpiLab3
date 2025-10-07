@@ -1,0 +1,49 @@
+.responses-container {
+    margin-top: 50px;
+    margin-bottom: 30px;
+    border: 2px solid black;
+    border-radius: 5px;
+}
+
+body .ui-panel.responses-container,
+body .ui-panel.responses-container .ui-panel-content,
+body .ui-panel.responses-container .ui-panel-titlebar {
+    background: rgba(0,0,0,0.4) !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+    font-size: 16px;
+    background-image: none !important;
+    color: white;
+}
+
+body .ui-datatable.transparent-table,
+body .ui-datatable.transparent-table thead th,
+body .ui-datatable.transparent-table tbody td,
+body .ui-datatable.transparent-table .ui-datatable-data > tr,
+body .ui-datatable.transparent-table .ui-datatable-odd,
+body .ui-datatable.transparent-table .ui-datatable-even,
+body .ui-datatable.transparent-table .ui-datatable-scrollable-header,
+body .ui-datatable.transparent-table .ui-datatable-scrollable-footer {
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    color: white;
+    border: 5px solid black;
+    text-align: center;
+    font-size: 16px;
+}
+
+body .ui-datatable.transparent-table .ui-datatable-scrollable-body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+body .ui-datatable.transparent-table .ui-datatable-scrollable-body::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+
+body .ui-datatable.transparent-table .ui-datatable-scrollable-body::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+}
