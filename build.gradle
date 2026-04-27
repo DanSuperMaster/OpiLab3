@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'war'
 }
-apply from: 'first_part.gradle'
+//apply from: 'first_part.gradle'
 
 group = 'itmo.programming'
 version = '1.0-SNAPSHOT'

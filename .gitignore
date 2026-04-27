@@ -1,0 +1,6 @@
+
+.gradle
+build
+.idea
+gradle
+src/main/webapp/WEB-INF/points-ds.xml
