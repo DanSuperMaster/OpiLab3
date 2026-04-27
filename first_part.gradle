@@ -1,0 +1,257 @@
+
+compileJava {
+    destinationDirectory = file("$buildDir/compiledFiles")
+}
+
+tasks.register("compile") {
+    dependsOn compileJava
+    description = "Компилятор для лабы"
+}
+
+war {
+    destinationDirectory = file("$buildDir/artifacts")
+    archiveFileName = 'web3.war'
+}
+
+tasks.register("buildWar") {
+    dependsOn compile, war
+    description = "Сброщик для варника"
+}
+
+tasks.register("cleanClasses", Delete) {
+    description = "Удалить все файлы .class"
+    delete fileTree("$buildDir/compiledFiles") {
+        include "**/*.class"
+    }
+}
+
+tasks.register("scp") {
+    description = "Перемещение собранного проекта"
+    doLast {
+        def fileName = providers.gradleProperty("f").get()
+        def sourcePath = providers.gradleProperty("s").get()
+        def destination = providers.gradleProperty("d").get()
+
+        def srcFile = file("${sourcePath}/${fileName}")
+
+        println "$srcFile -> $destination"
+
+        if (!srcFile.exists()) {
+            println "Файл не найден!"
+            return
+        }
+
+        ant.move(
+            file: srcFile,
+            todir: destination
+        )
+    }
+}
+
+
+
+tasks.register("validateXml") {
+    description = "Валидация всех XML-файлов"
+
+    doLast {
+        def xmlFiles = fileTree(projectDir) {
+            include '**/*.xml'
+        }
+
+        if (xmlFiles.isEmpty()) {
+            println "XML файлы не найдены"
+            return
+        }
+
+        def factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        factory.setNamespaceAware(true)
+
+        xmlFiles.each { file ->
+            try {
+                def builder = factory.newDocumentBuilder()
+                builder.parse(file)
+
+                println "OK: $file"
+            } catch (Exception e) {
+                println "Ошибка в файле: $file"
+            }
+        }
+    }
+}
+
+tasks.register("generateDocs", Javadoc) {
+    description = "Генерация Javadoc"
+
+    source = sourceSets.main.allJava
+    classpath = sourceSets.main.compileClasspath
+    destinationDir = file("$buildDir/docs/javadoc")
+}
+
+tasks.register("playMusic", Exec) {
+    dependsOn("buildWar")
+    description = "Проиграть музыку после сборки"
+
+    commandLine "mpv", "$projectDir/music.mp3"
+}
+
+
+import java.util.Properties
+
+tasks.register("native2ascii") {
+    description = "Преобразование native2ascii для копий файлов локализации"
+    def inputDir = file("$projectDir/src/main/resources")
+    def outputDir = file("$buildDir/native2ascii")
+
+    inputs.dir inputDir
+    outputs.dir outputDir
+
+    doLast {
+        outputDir.mkdirs()
+
+        fileTree(inputDir).matching {
+            include '**/*.properties'
+        }.each { File file ->
+            def props = new Properties()
+            file.withInputStream { props.load(it) }
+
+            def relativePath = inputDir.toPath().relativize(file.toPath()).toString()
+            def outputFile = new File(outputDir, relativePath)
+            outputFile.parentFile.mkdirs()
+
+            outputFile.withOutputStream {
+                props.store(it, null)
+            }
+        }
+    }
+}
+
+import java.nio.file.Files
+
+def trackedClassesFile = file("tracked-classes.txt")
+
+tasks.register("autoCommitIfNeeded", Exec) {
+    group = "git"
+    description = "Checks git diff and commits if tracked classes changed"
+
+    doLast {
+        if (!trackedClassesFile.exists()) {
+            println "Файл tracked-classes.txt не найден"
+            return
+        }
+
+        def trackedFiles = trackedClassesFile.readLines()
+                .findAll { it.trim() }
+                .collect { it.trim() }
+
+        println "Отслеживаемые файлы:"
+        trackedFiles.each { println " - $it" }
+
+        def diffOutput = new ByteArrayOutputStream()
+
+        commandLine "git", "diff", "--name-only"
+
+        def changedFiles = diffOutput.toString()
+                .readLines()
+                .collect { it.trim() }
+
+        println "Изменённые файлы:"
+        changedFiles.each { println " - $it" }
+
+        def matched = changedFiles.findAll { changed ->
+            trackedFiles.any { tracked ->
+                changed.endsWith(tracked) || changed.contains(tracked)
+            }
+        }
+
+        if (!matched.isEmpty()) {
+            println "Обнаружены изменения в отслеживаемых классах:"
+            matched.each { println " * $it" }
+
+            commandLine "git", "add", "."
+
+            commandLine "git", "commit", "-m", "Auto commit: tracked classes changed"
+
+            println "Коммит выполнен"
+        } else {
+            println "Нет изменений в отслеживаемых классах"
+        }
+    }
+}
+
+import org.apache.tools.ant.taskdefs.condition.Os
+
+tasks.register("team", Exec) {
+    group = "git"
+    description = "Builds 2 previous revisions and packages WARs into ZIP"
+
+    doLast {
+        def outputDir = file("$buildDir/team-builds")
+        outputDir.mkdirs()
+
+
+        def currentBranch = new ByteArrayOutputStream()
+            commandLine "git", "rev-parse", "--abbrev-ref", "HEAD"
+            standardOutput = currentBranch
+        currentBranch = currentBranch.toString().trim()
+
+        println "Текущая ветка: $currentBranch"
+
+        def commitsOut = new ByteArrayOutputStream()
+            commandLine "git", "log", "--pretty=format:%H", "-n", "2"
+            standardOutput = commitsOut
+
+        def commits = commitsOut.toString().readLines()
+        println "Коммиты для сборки:"
+        commits.each { println " - $it" }
+
+        def builtFiles = []
+
+        commits.eachWithIndex { commit, index ->
+            println "\n===> Checkout $commit"
+
+                commandLine "git", "checkout", commit
+
+
+            println "Сборка через buildWar..."
+
+                commandLine getGradleCommand(), "buildWar"
+
+
+            // предполагаем стандартный путь
+            def warFile = fileTree("$buildDir/libs").matching {
+                include "*.war"
+            }.files.first()
+
+            def targetFile = new File(outputDir, "build-${index + 1}-${commit.take(7)}.war")
+            warFile.withInputStream { input ->
+                targetFile.withOutputStream { out ->
+                    out << input
+                }
+            }
+
+            builtFiles << targetFile
+            println "Сохранён: $targetFile"
+        }
+
+        println "\nВозврат на ветку $currentBranch"
+        exec {
+            commandLine "git", "checkout", currentBranch
+        }
+
+        // ZIP архив
+        def zipFile = new File("$buildDir", "team-builds.zip")
+
+        ant.zip(destfile: zipFile) {
+            builtFiles.each { file ->
+                fileset(file: file)
+            }
+        }
+
+        println "\nZIP создан: $zipFile"
+    }
+}
+
+def getGradleCommand() {
+    return org.gradle.internal.os.OperatingSystem.current().isWindows() ?
+            "gradlew.bat" : "./gradlew"
+}
