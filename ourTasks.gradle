@@ -1,0 +1,140 @@
+import javax.xml.parsers.DocumentBuilderFactory
+import java.security.MessageDigest
+import java.text.SimpleDateFormat
+
+tasks.register("compile") {
+    dependsOn compileJava
+    group = "lab"
+}
+
+tasks.register("buildCustom") {
+    dependsOn compile, war
+    group = "lab"
+}
+
+tasks.register("cleanCustom", Delete) {
+    delete layout.buildDirectory
+    group = "lab"
+}
+
+tasks.named("test") {
+    dependsOn "buildCustom"
+}
+
+tasks.register("scp", Exec) {
+    dependsOn "buildCustom"
+    group = "lab"
+
+    doFirst {
+        def warTask = tasks.named("war").get()
+        def warFile = warTask.archiveFile.get().asFile
+
+        commandLine "scp", "-P", "2222", warFile.absolutePath, "s465244@se.ifmo.ru:~/opi/lab3"
+
+        println "Отправка файла: ${warFile.absolutePath}"
+    }
+}
+
+tasks.register("xml") {
+    group = "lab"
+    doLast {
+        fileTree(projectDir).include("**/*.xml").each { file ->
+            try {
+                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+                println "Valid: ${file.name}"
+            } catch (Exception e) {
+                throw new GradleException("XML Error in ${file.name}: ${e.message}")
+            }
+        }
+    }
+}
+
+tasks.named('javadoc') {
+    destinationDir = layout.buildDirectory.dir("docs/javadoc").get().asFile
+}
+
+war {
+    from(tasks.named('javadoc')) {
+        into 'docs'
+    }
+
+    doFirst {
+        def projectFiles = fileTree("src/main/java")
+
+        MessageDigest md5Digest = MessageDigest.getInstance("MD5")
+        MessageDigest sha1Digest = MessageDigest.getInstance("SHA-1")
+
+        projectFiles.each { file ->
+            if (file.isFile()) {
+                def bytes = file.readBytes()
+                md5Digest.update(bytes)
+                sha1Digest.update(bytes)
+            }
+        }
+
+        def md5Hex = md5Digest.digest().encodeHex().toString()
+        def sha1Hex = sha1Digest.digest().encodeHex().toString()
+
+        manifest {
+            attributes(
+                    "Project-MD5": md5Hex,
+                    "Project-SHA1": sha1Hex,
+                    "Bundle-Name": project.name,
+                    "Build-Time": new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+            )
+        }
+
+        println "Контрольные суммы проекта добавлены в MANIFEST.MF:"
+        println "MD5: $md5Hex"
+        println "SHA-1: $sha1Hex"
+    }
+}
+
+tasks.register("doc") {
+    group = "lab"
+    dependsOn javadoc, war
+}
+
+tasks.register("music", Exec) {
+    dependsOn "buildCustom"
+    group = "lab"
+    doFirst {
+        commandLine "mpv", "music.mp3"
+    }
+}
+
+tasks.register("native2ascii") {
+    group = "lab"
+
+    def inputDir = file("src/main/resources")
+    def outputDir = layout.buildDirectory.dir("native2ascii").get().asFile
+
+    doLast {
+        if (!outputDir.exists()) outputDir.mkdirs()
+        ant.native2ascii(
+                src: inputDir,
+                dest: outputDir,
+                includes: "**/*.properties"
+        )
+    }
+}
+
+tasks.register("alt", Jar) {
+    group = "lab"
+    archiveFileName = "web3-alt.jar"
+    destinationDirectory = layout.buildDirectory.dir("libs")
+
+    doFirst {
+        def altDir = layout.buildDirectory.dir("alt-src").get().asFile
+        copy {
+            from "src/main/java"
+            into altDir
+        }
+        ant.replaceregexp(match: "areaCheckService", replace: "serviceAlt", flags: "g") {
+            fileset(dir: altDir, includes: "**/*.java")
+        }
+    }
+
+    from layout.buildDirectory.dir("alt-src")
+    dependsOn "compileJava"
+}
