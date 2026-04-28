@@ -3,6 +3,7 @@ plugins {
     id 'war'
 }
 apply from: 'ourTasks.gradle'
+apply from: 'second_part.gradle'
 
 group = 'itmo.programming'
 version = '1.0-SNAPSHOT'
