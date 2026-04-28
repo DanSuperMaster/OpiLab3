@@ -1,0 +1,37 @@
+tasks.register("diffent") {
+    group = "lab"
+    doLast {
+        def changedFiles = getChangedFiles()
+        if (changedFiles) {
+            def targetFiles = file("fileTargets.txt").text
+            def matches = changedFiles.findAll { name ->
+                targetFiles.contains(name)
+            }
+
+            if (!matches.isEmpty()) {
+                println 123
+                ("git add .").execute().waitForProcessOutput(System.out, System.err)
+                ["git", "commit", "-m", "diff command active"].execute().waitForProcessOutput(System.out, System.err)
+            }
+        }
+    }
+}
+
+
+def getChangedFiles() {
+    ByteArrayOutputStream systemOutStream = new ByteArrayOutputStream()
+    ArrayList<String> files = new ArrayList<>()
+
+    ("git diff --name-only --diff-filter=d HEAD~1").execute().waitForProcessOutput(systemOutStream, System.err)
+    def allFiles = systemOutStream.toString().trim().split('\n')
+    systemOutStream.close()
+
+    for (file in allFiles) {
+        if (file.endsWith(".java")) {
+            files.add(file)
+            println file
+        }
+    }
+    files
+}
+
