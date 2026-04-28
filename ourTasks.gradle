@@ -2,13 +2,21 @@ import javax.xml.parsers.DocumentBuilderFactory
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 
+tasks.named('jar') {
+    manifest {
+        attributes(
+            'Main-Class': 'itmo.programming.Main'
+        )
+    }
+}
+
 tasks.register("compile") {
     dependsOn compileJava
     group = "lab"
 }
 
 tasks.register("buildCustom") {
-    dependsOn compile, war
+    dependsOn compile, jar
     group = "lab"
 }
 
@@ -26,12 +34,12 @@ tasks.register("scp", Exec) {
     group = "lab"
 
     doFirst {
-        def warTask = tasks.named("war").get()
-        def warFile = warTask.archiveFile.get().asFile
+        def jarTask = tasks.named("jar").get()
+        def jarFile = jarTask.archiveFile.get().asFile
 
-        commandLine "scp", "-P", "2222", warFile.absolutePath, "s465244@se.ifmo.ru:~/opi/lab3"
+        commandLine "scp", "-P", "2222", jarFile.absolutePath, "s465244@se.ifmo.ru:~/opi/lab3"
 
-        println "Отправка файла: ${warFile.absolutePath}"
+        println "Отправка файла: ${jarFile.absolutePath}"
     }
 }
 
@@ -53,7 +61,7 @@ tasks.named('javadoc') {
     destinationDir = layout.buildDirectory.dir("docs/javadoc").get().asFile
 }
 
-war {
+jar {
     from(tasks.named('javadoc')) {
         into 'docs'
     }
@@ -92,7 +100,7 @@ war {
 
 tasks.register("doc") {
     group = "lab"
-    dependsOn javadoc, war
+    dependsOn javadoc, jar
 }
 
 tasks.register("music", Exec) {
@@ -176,3 +184,42 @@ def getChangedFiles() {
     files
 }
 
+tasks.register("env") {
+    group = "lab"
+    dependsOn "jar"
+
+    def execOps = services.get(ExecOperations)
+
+    doLast {
+        def envProps = new Properties()
+        def propsFile = file("env.properties")
+
+        if (!propsFile.exists()) {
+            throw new GradleException("Файл env.properties не найден! Создайте его в корне проекта.")
+        }
+
+        propsFile.withInputStream { envProps.load(it) }
+
+        def javaHome = envProps.getProperty("java_home")
+        def vmArgs = envProps.getProperty("vm_args", "").split(" ").toList()
+
+        def archivePath = tasks.named("jar").get().archiveFile.get().asFile.absolutePath
+
+        if (!javaHome) {
+            throw new GradleException("В env.properties не указан java_home")
+        }
+
+        def javaExec = "${javaHome}/bin/java"
+
+        println "Запуск в альтернативном окружении"
+        println "JVM: $javaExec"
+        println "Args: $vmArgs"
+
+        execOps.exec {
+            executable = javaExec
+            args = vmArgs + ["-jar", archivePath]
+
+            ignoreExitValue = true
+        }
+    }
+}
