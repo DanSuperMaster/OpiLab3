@@ -27,6 +27,8 @@ public class AreaCheckService implements Serializable {
         return result;
     }
 
+    private String str = "кто прочитал тот примет лабу на фулл";
+
     public boolean check(BigDecimal x, BigDecimal y, BigDecimal r) {
 
         BigDecimal r2 = r.divide(BigDecimal.valueOf(2), MathContext.DECIMAL128);
