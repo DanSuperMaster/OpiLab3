@@ -2,21 +2,43 @@ import javax.xml.parsers.DocumentBuilderFactory
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 
-tasks.jar {
-    manifest {
-        attributes(
-                'Main-Class': 'itmo.programming.Main'
-        )
-    }
+tasks.register("compileMain", Exec) {
+    def srcDir = file("src/main/java")
+    def outDir = file("$layout.projectDirectory/build/classes/src/main")
+
+    doFirst { outDir.mkdirs() }
+
+    commandLine = [
+            "javac",
+            "-cp", sourceSets.main.compileClasspath.asPath,
+            "-d", outDir,
+            *fileTree(srcDir).matching { include "**/*.java" }.files*.path
+    ]
 }
 
-tasks.register("compileCustom") {
-    dependsOn compileJava
-    group = "lab"
+tasks.register("compileTest", Exec) {
+    dependsOn "compileMain"
+
+    def srcDir = file("src/test/java")
+    def outDir = file("$layout.projectDirectory/build/classes/src/test")
+
+    doFirst { outDir.mkdirs() }
+
+    def cp = files(
+            "$layout.projectDirectory/build/classes/src/main",
+            sourceSets.test.compileClasspath
+    )
+
+    commandLine = [
+            "javac",
+            "-cp", cp.asPath,
+            "-d", outDir,
+            *fileTree(srcDir).matching { include "**/*.java" }.files*.path
+    ]
 }
 
 tasks.register("buildCustom") {
-    dependsOn compile, jar
+    dependsOn compileTest, jar
     group = "lab"
 }
 
@@ -25,9 +47,23 @@ tasks.register("cleanCustom", Delete) {
     group = "lab"
 }
 
-tasks.named("test") {
-    dependsOn "buildCustom"
+tasks.register("testCustom") {
+    dependsOn "buildCustom", testClasses
     group = "lab"
+
+    def execOps = services.get(ExecOperations)
+
+    doLast {
+        execOps.exec {
+            commandLine 'java',
+                '-cp', sourceSets.test.runtimeClasspath.asPath,
+                'org.junit.platform.console.ConsoleLauncher',
+                'execute',
+                '--scan-classpath',
+                '--details', 'tree'
+            ignoreExitValue = true
+        }
+    }
 }
 
 tasks.register("scp", Exec) {
@@ -63,6 +99,12 @@ tasks.named('javadoc') {
 }
 
 jar {
+    manifest {
+        attributes(
+            'Main-Class': 'itmo.programming.Main'
+        )
+    }
+
     from(tasks.named('javadoc')) {
         into 'docs'
     }
@@ -102,6 +144,30 @@ jar {
 tasks.register("doc") {
     group = "lab"
     dependsOn javadoc, jar
+
+    def execOps = services.get(ExecOperations)
+
+    doLast {
+        def javadocDir = javadoc.destinationDir
+        def mdDir = layout.buildDirectory.dir("docs/markdown").get().asFile
+        mdDir.mkdirs()
+
+        fileTree(javadocDir).matching { include "**/*.html" }.each { htmlFile ->
+            def relative = javadocDir.toURI().relativize(htmlFile.toURI()).path
+            def mdFile = new File(mdDir, relative.replace(".html", ".md"))
+            mdFile.parentFile.mkdirs()
+
+            execOps.exec {
+                executable = "pandoc"
+                args = [
+                    htmlFile.path,
+                    "-f", "html",
+                    "-t", "markdown",
+                    "-o", mdFile.path
+                ]
+            }
+        }
+    }
 }
 
 tasks.register("music", Exec) {
@@ -145,7 +211,7 @@ tasks.register("alt", Jar) {
     }
 
     from layout.buildDirectory.dir("alt-src")
-    dependsOn "compileJava"
+    dependsOn "compileTest"
 }
 
 tasks.register("different") {
@@ -239,7 +305,7 @@ tasks.register("history") {
             println "Проверка ревизии $current"
 
             def compileProc = execOps.exec {
-                commandLine "./gradlew", "clean", "compileJava"
+                commandLine "./gradlew", "clean", "compileTest"
                 ignoreExitValue = true
             }
 
@@ -255,7 +321,7 @@ tasks.register("history") {
             } else {
                 println "Сборка $current не удалась. Откатываемся..."
 
-                def checkoutProc = exec {
+                def checkoutProc = execOps.exec {
                     commandLine "git", "checkout", "HEAD~1"
                     ignoreExitValue = true
                 }
