@@ -29,7 +29,7 @@ public class AreaCheckService implements Serializable {
 
     private String str = "кто прочитал тот примет лабу на фулл";
     private String str1 = "доп cum mit номер 1";
-    private String str2 = "доп коммит 228";
+    private String str2 = "доп коммит 228";sdf
 
     public boolean check(BigDecimal x, BigDecimal y, BigDecimal r) {
 
